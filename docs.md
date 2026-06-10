@@ -2,9 +2,9 @@
 
 ## Overview
 
-&nbsp;&nbsp;&nbsp;&nbsp; O AX8 ou Axle é uma CPU little-endian de 8-bits com um 12-bits de bus endereçável.
-Instruções são 8-bits com decodificação ortogonal: Os primeiros 3 bits ditam a
-unidade funcional, enquanto últimos 5 bits mais baixos configuram a operação.
+&nbsp;&nbsp;&nbsp;&nbsp; O AX8 ou Axle é uma CPU CISC little-endian de 8-bits com um bus de 12-bits
+endereçável. Instruções são 8-bits com decodificação ortogonal: Os bits 7:5
+ditam a unidade funcional, enquanto bits 4:0 mais baixos configuram a operação.
 Algumas instruções são seguidas por um endereço de 12-bits ou um valor de
 8-bits, fazendo-os serem 3-bytes ou 2-bytes no total.
 
@@ -30,11 +30,14 @@ Algumas instruções são seguidas por um endereço de 12-bits ou um valor de
 \* Mesmo que essa seja a definição normal, é possível que essas flags C e V
 sejam modificadas por outras operações.
 
+\* As flags N e Z sempre são modificadas por qualquer instrução que passe
+pela ALU.
+
 \* O nibble mais alto sempre é preenchido com zeros.
 
 ### Instruções
 
-| Mnemônico | `V C N Z` | Name                     |
+| Mnemônico | `V C N Z` | Nome                     |
 | :-------: | :-------: | ------------------------ |
 |   `ADD`   | `* * * *` | ADDition                 |
 |   `AND`   | `. . * *` | logical AND              |
@@ -49,7 +52,9 @@ sejam modificadas por outras operações.
 |   `CLC`   | `. 0 . .` | CLear Carry              |
 |   `CLV`   | `0 . . .` | CLear oVerflow           |
 |   `CMP`   | `* * * *` | CoMPare                  |
+|   `DEC`   | `. . * *` | DECrement                |
 |   `HLT`   | `. . . .` | HaLT                     |
+|   `INC`   | `. . * *` | INCrement                |
 |   `JMP`   | `. . . .` | JuMP                     |
 |   `LD `   | `. . * *` | LoaD                     |
 |   `LDX`   | `. . * *` | LoaD iX                  |
@@ -58,13 +63,15 @@ sejam modificadas por outras operações.
 |   `NOP`   | `. . . .` | No OPeration             |
 |   `NOT`   | `. . * *` | logical NOT              |
 |   `OR `   | `. . * *` | logical OR               |
+|   `ROL`   | `. * * *` | logical ROtate Left      |
+|   `ROR`   | `. * * *` | logical ROtate Right     |
 |   `SEC`   | `. 1 . .` | SEt Carry                |
 |   `ST `   | `. . * *` | STore                    |
 |   `STX`   | `. . * *` | STore iX                 |
 |   `STY`   | `. . * *` | STore iY                 |
 |   `SUB`   | `* * * *` | SUBtract                 |
 |   `SHL`   | `. * * *` | logical SHift Left       |
-|   `SHR`   | `. * * *` | logical SHift Right      |
+|   `SHR`   | `. * 0 *` | logical SHift Right      |
 |   `XOR`   | `. . * *` | logical eXclusive OR     |
 |   `TAX`   | `. . * *` | Transfer A to iX         |
 |   `TAY`   | `. . * *` | Transfer A to iY         |
@@ -74,26 +81,36 @@ sejam modificadas por outras operações.
 ### Codificação de Instrução
 
 ```
-[7:5] opcode -> Seleciona a unidade funcional
-[4:0] mode   -> Configura operação dentro da unidade
-```
+Instrução:
+  [7:5] opcode -> Seleciona a unidade funcional
+  [4:0] mode   -> Configura operação dentro da unidade
 
-Instruções que referenciam memória são 3 bytes:
-
-```
-byte 0: Opcode + Mode
-byte 1: addr[7:0]
-byte 2: addr[11:8] (Nibble mais alto é ignorado)
+Modos:
+  Implied: (1-byte) | MNEMONIC
+    byte 0: instrução
+  Zeropage: (1-byte) | MNEMONIC [IY]
+    byte 0: instrução
+  Immediate: (2-bytes) | MNEMONIC #imm8
+    byte 0: instrução
+    byte 1: imm8[7:0] (sem sinal: 0 a 255)
+  Relative: (2-bytes) | MNEMONIC rel8
+    byte 0: instrução
+    byte 1: rel8[7:0] (com sinal: -128 a 127)
+  Absolute: (3-bytes) | MNEMONIC addr
+    byte 0: instrução
+    byte 1: addr[7:0]
+    byte 2: addr[11:8] (nibble mais alto é ignorado)
 ```
 
 ### Tabela de opcodes
 
-| Bits  | Grupo | Descrição                                |
-| :---: | :---: | :--------------------------------------- |
-| `000` |  SYS  | Operações do sistema                     |
-| `001` |  MEM  | Transferência de Memória e Registradores |
-| `010` |  ALU  | Aritmética e Lógica                      |
-| `011` |  JMP  | Manipulação do Program Counter           |
+| Bits  |   Grupo    | Descrição                                |
+| :---: | :--------: | :--------------------------------------- |
+| `000` |   System   | Operações do sistema                     |
+| `001` |   Memory   | Transferência de Memória e Registradores |
+| `010` | Arithmetic | Aritmética e Lógica                      |
+| `011` |   Unary    | Aritmética Unária                        |
+| `100` |    Jump    | Manipulação do Program Counter           |
 
 ### Tabela de modos
 
@@ -102,7 +119,7 @@ byte 2: addr[11:8] (Nibble mais alto é ignorado)
 alternação de submodo, e os bits 2:0 ditam qual submodo deve ser configurado
 e executado. Qualquer modo não encodificado aqui deve gerar a instrução: `HALT`
 
-Grupo `000`: SYS
+Grupo `000`: System
 
 |  Mode   | Mnemônico | Operação        |
 | :-----: | --------- | --------------- |
@@ -112,14 +129,14 @@ Grupo `000`: SYS
 | `00111` | `CLV`     | `V <- 0`        |
 | `11111` | `HLT`     | `Halt CPU`      |
 
-Grupo `001`: MEM
+Grupo `001`: Memory
 
 |  Mode   | Mnemônico  | Operação          |
 | :-----: | ---------- | ----------------- |
 | `00000` | `LD  addr` | `A <- mem[addr]`  |
 | `00001` | `ST  addr` | `mem[addr] <- A`  |
 | `00010` | `LD  [IY]` | `A <- mem[IY]`    |
-| `00011` | `ST  [IY]` | `A <- mem[IY]`    |
+| `00011` | `ST  [IY]` | `mem[IX] <- A`    |
 | `00100` | `LDX addr` | `IX <- mem[addr]` |
 | `00101` | `STX addr` | `mem[addr] <- IX` |
 | `00110` | `LDY addr` | `IY <- mem[addr]` |
@@ -129,7 +146,7 @@ Grupo `001`: MEM
 | `01110` | `TAY`      | `IY <- A`         |
 | `01111` | `TYA`      | `A <- IY`         |
 
-Grupo `010`: ALU
+Grupo `010`: Arithmetic
 
 |  Mode   | Mnemônico  | Operação                       |
 | :-----: | ---------- | ------------------------------ |
@@ -140,15 +157,6 @@ Grupo `010`: ALU
 | `00100` | `OR  IX`   | `A <- A \| IX`                 |
 | `00101` | `XOR IX`   | `A <- A ^ IX`                  |
 | `00110` | `CMP IX`   | `A - IX, sem writeback`        |
-| `00111` | `NOT`      | `A <- ~A`                      |
-| `01000` | `INC`      | `A <- A + 1`                   |
-| `01001` | `DEC`      | `A <- A - 1`                   |
-| `01010` | `INC IX`   | `IX <- IX + 1`                 |
-| `01011` | `DEC IX`   | `IX <- IX - 1`                 |
-| `01100` | `SHL`      | `A <- A << 1`                  |
-| `01101` | `SHR`      | `A <- A >> 1`                  |
-| `01110` | `INC IY`   | `IY <- IY + 1`                 |
-| `01111` | `DEC IY`   | `IY <- IY - 1`                 |
 | `10000` | `ADD imm8` | `A <- A + imm8 + C`            |
 | `10001` | `SUB imm8` | `A <- A - imm8 - (~C)`         |
 | `10010` | `MUL imm8` | `A <- A[3:0] * imm8[3:0]`      |
@@ -164,7 +172,23 @@ Grupo `010`: ALU
 | `11101` | `XOR addr` | `A <- A ^ mem[addr]`           |
 | `11110` | `CMP addr` | `A - mem[addr], sem writeback` |
 
-Grupo `011`: JMP
+Grupo `011`: Unary
+
+|  Mode   | Mnemônico | Operação                        |
+| :-----: | --------- | ------------------------------- |
+| `00000` | `INC`     | `A <- A + 1`                    |
+| `00001` | `DEC`     | `A <- A - 1`                    |
+| `00010` | `ROL`     | `A <- A <] 1; C <- [7..0] <- C` |
+| `00011` | `ROL`     | `A <- A [> 1; C -> [7..0] -> C` |
+| `00101` | `NOT`     | `A <- ~A`                       |
+| `00110` | `SHL`     | `A <- A << 1; C <- [7..0] <- 0` |
+| `00111` | `SHR`     | `A <- A >> 1; 0 -> [7..0] -> C` |
+| `01100` | `INC IX`  | `IX <- IX + 1`                  |
+| `01101` | `DEC IX`  | `IX <- IX - 1`                  |
+| `01110` | `INC IY`  | `IY <- IY + 1`                  |
+| `01111` | `DEC IY`  | `IY <- IY - 1`                  |
+
+Grupo `100`: Jump
 
 |  Mode   | Mnemônico  | Operação                     |
 | :-----: | ---------- | ---------------------------- |
@@ -183,6 +207,25 @@ Notas:
 - rel8 sempre é um inteiro com sinal, que vai de `-128` à `127`.
 - imm8 sempre é um inteiro sem sinal, que vai de `0` à `255`.
 
+### Unidade Lógica de Aritmética
+
+&nbsp;&nbsp;&nbsp;&nbsp;A ULA é a unidade lógica de aritmética principal do AX8, nela é possível
+computar duas entradas A e B, e retornar o resultado Y, junto com as flags
+apropriadas. A ULA é limitada a computação de números inteiros de 8-bits,
+sendo sua saída também limitada a 8-bits.
+
+|   OP   | Nome  | Operação               | Carry                | Overflow            |
+| :----: | :---: | ---------------------- | -------------------- | ------------------- |
+| `0000` | `ADD` | `Y <- A + B + C`       | carry-out            | sobrecarga de sinal |
+| `0001` | `SUB` | `Y <- A - B - (~C)`    | borrow invertido     | sobrecarga de sinal |
+| `0010` | `MUL` | `Y <- A[3:0] * B[3:0]` | ---                  | Y > 0x0F            |
+| `0011` | `AND` | `Y <- A & B`           | ---                  | ---                 |
+| `0100` | `OR ` | `Y <- A \| B`          | ---                  | ---                 |
+| `0101` | `XOR` | `Y <- A ^ B`           | ---                  | ---                 |
+| `0111` | `MOV` | `Y <- B`               | ---                  | ---                 |
+| `1010` | `ROL` | `Y <- A <] 1`          | A\[7\] antes do roll | ---                 |
+| `1011` | `ROR` | `Y <- A [> 1`          | A\[0\] antes do roll | ---                 |
+
 ### Notas sobre implementação:
 
 &nbsp;&nbsp;&nbsp;&nbsp; Será somente utilizado portas lógicas: AND, OR, NOT e XOR. A implementação
@@ -192,6 +235,17 @@ Notas relevantes sobre cada instrução:
 
 - `SUB`: A operação pode ser implementada como: `A + (~B) + C`, já que,
   tecnicamente, isto é equivalente a: `A - B - (~C)`.
+- `ROL` e `ROR`: Operações podem ser feitas desta forma:<br>
+  <img src="./images/bit_rotation.png" alt="bit rotation" width="20%" height="20%">
+- `SHL` e `SHR`: Operações são feitas como `ROL` e `ROR`, mas com a flag carry em `0`
+- `NOT`: Pode ser implementado como: `A XOR 0xFF`
+- `CMP`: O resultado da operação pode ser interpretado como:
+
+  | Relação  |  Z  |  C  |   N    |
+  | :------: | :-: | :-: | :----: |
+  | `A < OP` | `0` | `0` | `Y[7]` |
+  | `A = OP` | `1` | `1` |  `0`   |
+  | `A > OP` | `0` | `1` | `Y[7]` |
 
 ### Referências e materiais utilizados:
 
