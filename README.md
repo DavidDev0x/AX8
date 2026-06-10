@@ -184,7 +184,7 @@ Grupo `011`: Unary
 | `00000` | `INC`     | `A <- A + 1`                    |
 | `00001` | `DEC`     | `A <- A - 1`                    |
 | `00010` | `ROL`     | `A <- A <] 1; C <- [7..0] <- C` |
-| `00011` | `ROL`     | `A <- A [> 1; C -> [7..0] -> C` |
+| `00011` | `ROR`     | `A <- A [> 1; C -> [7..0] -> C` |
 | `00101` | `NOT`     | `A <- ~A`                       |
 | `00110` | `SHL`     | `A <- A << 1; C <- [7..0] <- 0` |
 | `00111` | `SHR`     | `A <- A >> 1; 0 -> [7..0] -> C` |
@@ -240,8 +240,6 @@ Notas relevantes sobre cada instrução:
 
 - `SUB`: A operação pode ser implementada como: `A + (~B) + C`, já que,
   tecnicamente, isto é equivalente a: `A - B - (~C)`.
-- `ROL` e `ROR`: Operações podem ser feitas desta forma:<br>
-  <img src="./images/bit_rotation.png" alt="bit rotation" width="20%" height="20%">
 - `SHL` e `SHR`: Operações são feitas como `ROL` e `ROR`, mas com a flag carry em `0`
 - `NOT`: Pode ser implementado como: `A XOR 0xFF`
 - `CMP`: O resultado da operação pode ser interpretado como:
