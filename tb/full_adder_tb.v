@@ -5,7 +5,7 @@ module full_adder_tb;
   reg a, b, cin;
   wire y, cout;
 
-  full_adder fa0 (
+  full_adder uut (
       .a(a),
       .b(b),
       .cin(cin),

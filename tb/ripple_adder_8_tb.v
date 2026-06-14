@@ -7,7 +7,7 @@ module ripple_adder_8_tb;
   wire [7:0] y;
   wire cout;
 
-  ripple_adder_8 ra8_0 (
+  ripple_adder_8 uut (
       .a(a),
       .b(b),
       .cin(cin),

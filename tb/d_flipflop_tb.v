@@ -5,7 +5,7 @@ module d_flipflop_tb;
   reg clk, d;
   wire q, nq;
 
-  d_flipflop dff0 (
+  d_flipflop uut (
       .clk(clk),
       .d  (d),
       .q  (q),

@@ -15,8 +15,8 @@ module ripple_adder_4 (
 
   genvar i;
   generate
-    for (i = 0; i < 4; i = i + 1) begin : gen_adder
-      full_adder fa0 (
+    for (i = 0; i < 4; i = i + 1) begin : gen_add
+      full_adder fa (
           .a(a[i]),
           .b(b[i]),
           .cin(carry[i]),

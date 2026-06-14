@@ -5,7 +5,7 @@ module d_latch_tb;
   reg clk, d;
   wire q, nq;
 
-  d_latch dl0 (
+  d_latch uut (
       .clk(clk),
       .d  (d),
       .q  (q),
