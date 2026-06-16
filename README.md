@@ -239,7 +239,9 @@ deve ser feita e documentada em blocos de lógica isoladas.
 Notas relevantes sobre cada instrução:
 
 - `SUB`: A operação pode ser implementada como: `A + (~B) + C`, já que,
-  tecnicamente, isto é equivalente a: `A - B - (~C)`.
+  tecnicamente, isto é equivalente a: `A - B - (~C)`. Por causa desta natureza,
+  o resultado sempre está uma unidade maior, portanto, antes de qualquer
+  operação, é recomendado usar o `SEC` para ativar o Carry.
 - `SHL` e `SHR`: Não tem opcodes próprios na ALU, as operações são feitas como
   `ROL` e `ROR`, mas com a flag carry em `0`
 - `NOT`: Pode ser implementado como: `A XOR 0xFF`
