@@ -44,7 +44,7 @@ pela ALU.
 
 | Mnemônico | `V C N Z` | Nome                     |
 | :-------: | :-------: | ------------------------ |
-|   `ADD`   | `* * * *` | ADDition                 |
+|   `ADC`   | `* * * *` | ADdition with Carry      |
 |   `AND`   | `. . * *` | logical AND              |
 |   `BCC`   | `. . . .` | Branch if Carry Clear    |
 |   `BCS`   | `. . . .` | Branch if Carry Set      |
@@ -74,7 +74,7 @@ pela ALU.
 |   `ST `   | `. . * *` | STore                    |
 |   `STX`   | `. . * *` | STore iX                 |
 |   `STY`   | `. . * *` | STore iY                 |
-|   `SUB`   | `* * * *` | SUBtract                 |
+|   `SBC`   | `* * * *` | SuBtract with Carry      |
 |   `SHL`   | `. * * *` | logical SHift Left       |
 |   `SHR`   | `. * 0 *` | logical SHift Right      |
 |   `XOR`   | `. . * *` | logical eXclusive OR     |
@@ -155,22 +155,22 @@ Grupo `010`: Arithmetic
 
 |  Mode   | Mnemônico  | Operação                       |
 | :-----: | ---------- | ------------------------------ |
-| `00000` | `ADD IX`   | `A <- A + IX + C`              |
-| `00001` | `SUB IX`   | `A <- A - IX - (~C)`           |
+| `00000` | `ADC IX`   | `A <- A + IX + C`              |
+| `00001` | `SBC IX`   | `A <- A - IX - (~C)`           |
 | `00010` | `MUL IX`   | `A <- A[3:0] * IX[3:0]`        |
 | `00011` | `AND IX`   | `A <- A & IX`                  |
 | `00100` | `OR  IX`   | `A <- A \| IX`                 |
 | `00101` | `XOR IX`   | `A <- A ^ IX`                  |
 | `00110` | `CMP IX`   | `A - IX, sem writeback`        |
-| `10000` | `ADD imm8` | `A <- A + imm8 + C`            |
-| `10001` | `SUB imm8` | `A <- A - imm8 - (~C)`         |
+| `10000` | `ADC imm8` | `A <- A + imm8 + C`            |
+| `10001` | `SBC imm8` | `A <- A - imm8 - (~C)`         |
 | `10010` | `MUL imm8` | `A <- A[3:0] * imm8[3:0]`      |
 | `10011` | `AND imm8` | `A <- A & imm8`                |
 | `10100` | `OR  imm8` | `A <- A \| imm8`               |
 | `10101` | `XOR imm8` | `A <- A ^ imm8`                |
 | `10110` | `CMP imm8` | `A - imm8, sem writeback`      |
-| `11000` | `ADD addr` | `A <- A + mem[addr] + C`       |
-| `11001` | `SUB addr` | `A <- A - mem[addr] - (~C)`    |
+| `11000` | `ADC addr` | `A <- A + mem[addr] + C`       |
+| `11001` | `SBC addr` | `A <- A - mem[addr] - (~C)`    |
 | `11010` | `MUL addr` | `A <- A[3:0] * mem[addr][3:0]` |
 | `11011` | `AND addr` | `A <- A & mem[addr]`           |
 | `11100` | `OR  addr` | `A <- A \| mem[addr]`          |
@@ -221,8 +221,8 @@ sendo sua saída também limitada a 8-bits.
 
 |   OP   | Nome  | Operação               | Carry                | Overflow            |
 | :----: | :---: | ---------------------- | -------------------- | ------------------- |
-| `0000` | `ADD` | `Y <- A + B + C`       | carry-out            | sobrecarga de sinal |
-| `0001` | `SUB` | `Y <- A - B - (~C)`    | borrow invertido     | sobrecarga de sinal |
+| `0000` | `ADC` | `Y <- A + B + C`       | carry-out            | sobrecarga de sinal |
+| `0001` | `SBC` | `Y <- A - B - (~C)`    | borrow invertido     | sobrecarga de sinal |
 | `0010` | `MUL` | `Y <- A[3:0] * B[3:0]` | ---                  | Y > 0x0F            |
 | `0011` | `AND` | `Y <- A & B`           | ---                  | ---                 |
 | `0100` | `OR ` | `Y <- A \| B`          | ---                  | ---                 |
@@ -238,7 +238,9 @@ deve ser feita e documentada em blocos de lógica isoladas.
 
 Notas relevantes sobre cada instrução:
 
-- `SUB`: A operação pode ser implementada como: `A + (~B) + C`, já que,
+- `ADC`: Por causa da natureza da instrução, é recomendado utilizar 'CLC' para
+  limpar o Carry
+- `SBC`: A operação pode ser implementada como: `A + (~B) + C`, já que,
   tecnicamente, isto é equivalente a: `A - B - (~C)`. Por causa desta natureza,
   o resultado sempre está uma unidade maior, portanto, antes de qualquer
   operação, é recomendado usar o `SEC` para ativar o Carry.
@@ -261,6 +263,9 @@ Notas relevantes sobre cada instrução:
 - [CRAFTING A CPU TO RUN PROGRAMS](https://www.youtube.com/watch?v=GYlNoAMBY6o)
 - [HOW TRANSISTORS RUN CODE?](https://www.youtube.com/watch?v=HjneAhCy2N4)
 - [Building an 8-bit breadboard computer!](https://www.youtube.com/playlist?list=PLowKtXNTBypGqImE405J2565dvjafglHU)
+- [Wikipédia - Arithmetic Logic Unit](https://en.wikipedia.org/wiki/Arithmetic_logic_unit)
+- [Wikipédia - Adder Eletronics](<https://en.wikipedia.org/wiki/Adder_(electronics)>)
+- [Wikipédia - Adder Subtractor](https://en.wikipedia.org/wiki/Adder%E2%80%93subtractor)
 
 [^1]:
     Em fato, essa encodificação não é obrigatória, mas uma forma de facilitar
