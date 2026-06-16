@@ -41,8 +41,8 @@ module adder_subtractor_tb;
   endtask
 
   initial begin
-    $dumpfile("adder_subtractor.vcd");
-    $dumpvars(0, adder_subtractor_tb);
+    $dumpfile("adder_subtractor_8.vcd");
+    $dumpvars(0, adder_subtractor_8_tb);
 
     check(8'h96, 8'h4B, 0, 0, 8'hE1, 0);  // ADD: 0x96 + 0x4B + C=0 -> 0xE1, C=0
     check(8'hC8, 8'h64, 0, 0, 8'h2C, 1);  // ADD: 0xC8 + 0x64 + C=0 -> 0x2C, C=1

@@ -8,3 +8,4 @@
 ./src/ripple_adder_4.v
 ./src/ripple_adder_8.v
 ./src/adder_subtractor.v
+./src/shifter_8.v
