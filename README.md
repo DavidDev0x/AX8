@@ -156,21 +156,21 @@ Grupo `010`: Arithmetic
 |  Mode   | Mnemônico  | Operação                       |
 | :-----: | ---------- | ------------------------------ |
 | `00000` | `ADC IX`   | `A <- A + IX + C`              |
-| `00001` | `SBC IX`   | `A <- A - IX - (~C)`           |
+| `00001` | `SBC IX`   | `A <- A - IX - (1 - C)`        |
 | `00010` | `MUL IX`   | `A <- A[3:0] * IX[3:0]`        |
 | `00011` | `AND IX`   | `A <- A & IX`                  |
 | `00100` | `OR  IX`   | `A <- A \| IX`                 |
 | `00101` | `XOR IX`   | `A <- A ^ IX`                  |
 | `00110` | `CMP IX`   | `A - IX, sem writeback`        |
 | `10000` | `ADC imm8` | `A <- A + imm8 + C`            |
-| `10001` | `SBC imm8` | `A <- A - imm8 - (~C)`         |
+| `10001` | `SBC imm8` | `A <- A - imm8 - (1 - C)`      |
 | `10010` | `MUL imm8` | `A <- A[3:0] * imm8[3:0]`      |
 | `10011` | `AND imm8` | `A <- A & imm8`                |
 | `10100` | `OR  imm8` | `A <- A \| imm8`               |
 | `10101` | `XOR imm8` | `A <- A ^ imm8`                |
 | `10110` | `CMP imm8` | `A - imm8, sem writeback`      |
 | `11000` | `ADC addr` | `A <- A + mem[addr] + C`       |
-| `11001` | `SBC addr` | `A <- A - mem[addr] - (~C)`    |
+| `11001` | `SBC addr` | `A <- A - mem[addr] - (1 - C)` |
 | `11010` | `MUL addr` | `A <- A[3:0] * mem[addr][3:0]` |
 | `11011` | `AND addr` | `A <- A & mem[addr]`           |
 | `11100` | `OR  addr` | `A <- A \| mem[addr]`          |
@@ -222,7 +222,7 @@ sendo sua saída também limitada a 8-bits.
 |   OP   | Nome  | Operação               | Carry                | Overflow            |
 | :----: | :---: | ---------------------- | -------------------- | ------------------- |
 | `0000` | `ADC` | `Y <- A + B + C`       | carry-out            | sobrecarga de sinal |
-| `0001` | `SBC` | `Y <- A - B - (~C)`    | borrow invertido     | sobrecarga de sinal |
+| `0001` | `SBC` | `Y <- A - B - (1 - C)` | borrow invertido     | sobrecarga de sinal |
 | `0010` | `MUL` | `Y <- A[3:0] * B[3:0]` | zero                 | Y > 0x0F            |
 | `0011` | `AND` | `Y <- A & B`           | ---                  | ---                 |
 | `0100` | `OR ` | `Y <- A \| B`          | ---                  | ---                 |
