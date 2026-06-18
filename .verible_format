@@ -8,8 +8,8 @@
 --compact_indexing_and_selections=true
 --formal_parameters_alignment=align
 --module_net_variable_alignment=infer
---named_parameter_alignment=wrap
---named_port_alignment=wrap
+--named_parameter_alignment=align
+--named_port_alignment=align
 --port_declarations_alignment=align
 --try_wrap_long_lines=true
 
