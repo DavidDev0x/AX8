@@ -2,19 +2,19 @@
 `timescale 1ns / 1ps
 
 module mux_2to1 (
-    input  s,
-    input  a,
-    input  b,
+    input  sel,
+    input  in0,
+    input  in1,
     output y
 );
     // y = (~s & a) | (s & b)
-    wire ns;
+    wire nsel;
     wire w0, w1;
 
-    not n0 (ns, s);
+    not n0 (nsel, sel);
 
-    nand na0 (w0, ns, a);  // w0 = ~(~s & a)
-    nand na1 (w1, s, b);  // w1 = ~(s & b)
+    nand na0 (w0, nsel, in0);
+    nand na1 (w1, sel, in1);
 
     nand na2 (y, w0, w1);
 

@@ -2,14 +2,14 @@
 `timescale 1ns / 1ps
 
 module mux_2to1_tb;
-    reg s, a, b;
+    reg sel, in0, in1;
     wire y;
 
     mux_2to1 uut (
-        .s(s),
-        .a(a),
-        .b(b),
-        .y(y)
+        .sel(sel),
+        .in0(in0),
+        .in1(in1),
+        .y  (y)
     );
 
     initial begin
@@ -17,18 +17,17 @@ module mux_2to1_tb;
         $dumpvars(0, mux_2to1_tb);
 
         // verilog_format: off
-        s = 1'b0; a = 1'b0; b = 1'b0; #10 // a=0, b=0, y=a -> 0
-        s = 1'b0; a = 1'b0; b = 1'b1; #10 // a=0, b=1, y=a -> 0
-        s = 1'b0; a = 1'b1; b = 1'b0; #10 // a=1, b=0, y=a -> 1
-        s = 1'b0; a = 1'b1; b = 1'b1; #10 // a=1, b=1, y=a -> 1
+        sel = 1'b0; in0 = 1'b0; in1 = 1'b0; #10 // in0=0, in1=0, y=in0 -> 0
+        sel = 1'b0; in0 = 1'b0; in1 = 1'b1; #10 // in0=0, in1=1, y=in0 -> 0
+        sel = 1'b0; in0 = 1'b1; in1 = 1'b0; #10 // in0=1, in1=0, y=in0 -> 1
+        sel = 1'b0; in0 = 1'b1; in1 = 1'b1; #10 // in0=1, in1=1, y=in0 -> 1
 
-        s = 1'b1; a = 1'b0; b = 1'b0; #10 // a=0, b=0, y=b -> 0
-        s = 1'b1; a = 1'b0; b = 1'b1; #10 // a=0, b=1, y=b -> 1
-        s = 1'b1; a = 1'b1; b = 1'b0; #10 // a=1, b=0, y=b -> 0
-        s = 1'b1; a = 1'b1; b = 1'b1; #10 // a=1, b=1, y=b -> 1
+        sel = 1'b1; in0 = 1'b0; in1 = 1'b0; #10 // in0=0, in1=0, y=in1 -> 0
+        sel = 1'b1; in0 = 1'b0; in1 = 1'b1; #10 // in0=0, in1=1, y=in1 -> 1
+        sel = 1'b1; in0 = 1'b1; in1 = 1'b0; #10 // in0=1, in1=0, y=in1 -> 0
+        sel = 1'b1; in0 = 1'b1; in1 = 1'b1; #10 // in0=1, in1=1, y=in1 -> 1
         // verilog_format: on
 
         $finish;
     end
-
 endmodule

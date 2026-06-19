@@ -2,9 +2,9 @@
 `timescale 1ns / 1ps
 
 module register_8 (
-    input clk,
-    input we,  // write-enable
-    input [7:0] d,
+    input        clk,
+    input        we,   // write-enable
+    input  [7:0] d,
     output [7:0] q
 );
     // WE=0 -> Data input = current Q (hold data)
@@ -20,10 +20,10 @@ module register_8 (
             wire w0, w1;
 
             mux_2to1 mux (
-                .s(we),
-                .a(q[i]),
-                .b(d[i]),
-                .y(d_in[i])
+                .sel(we),
+                .in0(q[i]),
+                .in1(d[i]),
+                .y  (d_in[i])
             );
 
             d_flipflop dff (
