@@ -82,7 +82,9 @@ pela ALU.
 |   `TAX`   | `. . * *` | Transfer A to iX         |
 |   `TAY`   | `. . * *` | Transfer A to iY         |
 |   `TXA`   | `. . * *` | Transfer iX to A         |
-|   `TYA`   | `. . * *` | TRansfer iY to A         |
+|   `TXY`   | `. . * *` | Transfer iX yo iY        |
+|   `TYA`   | `. . * *` | Transfer iY to A         |
+|   `TYX`   | `. . * *` | Transfer IY to iX        |
 
 ### Codificação de Instrução
 
@@ -144,18 +146,35 @@ Grupo `001`: Memory
 
 |  Mode   | Mnemônico  | Operação          |
 | :-----: | ---------- | ----------------- |
-| `00000` | `LD  addr` | `A <- mem[addr]`  |
-| `00001` | `ST  addr` | `mem[addr] <- A`  |
-| `00010` | `LD  [IY]` | `A <- mem[IY]`    |
-| `00011` | `ST  [IY]` | `mem[IY] <- A`    |
-| `00100` | `LDX addr` | `IX <- mem[addr]` |
+| `00000` | `LD addr`  | `A <- mem[addr]`  |
+| `00001` | `LDX addr` | `IX <- mem[addr]` |
+| `00010` | `LDY addr` | `IY <- mem[addr]` |
+| `00011` | `HLT`      | `Halt CPU`        |
+| `00100` | `ST addr`  | `mem[addr] <- A`  |
 | `00101` | `STX addr` | `mem[addr] <- IX` |
-| `00110` | `LDY addr` | `IY <- mem[addr]` |
-| `00111` | `STY addr` | `mem[addr] <- IY` |
-| `01100` | `TAX`      | `IX <- A`         |
-| `01101` | `TXA`      | `A <- IX`         |
-| `01110` | `TAY`      | `IY <- A`         |
-| `01111` | `TYA`      | `A <- IY`         |
+| `00110` | `STY addr` | `mem[addr] <- IY` |
+| `00111` | `HLT`      | `Halt CPU`        |
+| `01000` | `LD [IY]`  | `A <- mem[addr]`  |
+| `01001` | `LDX [IY]` | `IX <- mem[addr]` |
+| `01010` | `LDY [IY]` | `IY <- mem[addr]` |
+| `01011` | `HLT`      | `Halt CPU`        |
+| `01100` | `ST [IY]`  | `mem[IY] <- A`    |
+| `01101` | `STX [IY]` | `mem[IY] <- IX`   |
+| `01110` | `STY [IY]` | `mem[IY] <- IY`   |
+| `01111` | `HLT`      | `Halt CPU`        |
+| `10000` | `NOP`      | `Sem operação`    |
+| `10001` | `TXA`      | `A <- IX`         |
+| `10010` | `TYA`      | `A <- IY`         |
+| `10011` | `HLT`      | `Halt CPU`        |
+| `10100` | `TAX`      | `IX <- A`         |
+| `10101` | `NOP`      | `Sem operação`    |
+| `10110` | `TYX`      | `IX <- IY`        |
+| `10111` | `HLT`      | `Halt CPU`        |
+| `11000` | `TAY`      | `IY <- A`         |
+| `11001` | `TXY`      | `IY <- IX`        |
+| `11010` | `NOP`      | `Sem operação`    |
+| `11011` | `HLT`      | `Halt CPU`        |
+| `111xx` | `HLT`      | `Halt CPU`        |
 
 Grupo `010`: Arithmetic
 
