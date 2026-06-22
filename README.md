@@ -30,9 +30,9 @@ como Stack Pointer.
 | `Z`  | `0` | `result == 0x00`                   |
 | `N`  | `1` | `result[7] & 1`                    |
 | `C`  | `2` | `carry-out bit 7`                  |
-| `V`  | `3` | `(A[7] == B[7]) && (Y[7] != A[7])` |
+| `V`  | `3` | `(A[7] != Y[7]) && (B[7] != Y[7])` |
 
-\* Mesmo que essa seja a definição normal, é possível que essas flags C e V
+\* Mesmo que essa seja a definição normal, é possível que as flags V e C
 sejam modificadas por outras operações.
 
 \* As flags N e Z sempre são modificadas por qualquer instrução que passe
