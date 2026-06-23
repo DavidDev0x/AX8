@@ -140,6 +140,9 @@ Grupo `000`: System
 | `00101` | `SEC`     | `C <- 1`        |
 | `00110` | `CLV`     | `V <- 0`        |
 | `00111` | `SEV`     | `V <- 1`        |
+| `01xxx` | `XXX`     | `Halt CPU`      |
+| `10xxx` | `XXX`     | `Halt CPU`      |
+| `11xxx` | `XXX`     | `Halt CPU`      |
 | `11111` | `HLT`     | `Halt CPU`      |
 
 Grupo `001`: Memory
@@ -149,32 +152,32 @@ Grupo `001`: Memory
 | `00000` | `LD addr`  | `A <- mem[addr]`  |
 | `00001` | `LDX addr` | `IX <- mem[addr]` |
 | `00010` | `LDY addr` | `IY <- mem[addr]` |
-| `00011` | `HLT`      | `Halt CPU`        |
+| `00011` | `XXX`      | `Halt CPU`        |
 | `00100` | `ST addr`  | `mem[addr] <- A`  |
 | `00101` | `STX addr` | `mem[addr] <- IX` |
 | `00110` | `STY addr` | `mem[addr] <- IY` |
-| `00111` | `HLT`      | `Halt CPU`        |
+| `00111` | `XXX`      | `Halt CPU`        |
 | `01000` | `LD [IY]`  | `A <- mem[addr]`  |
 | `01001` | `LDX [IY]` | `IX <- mem[addr]` |
 | `01010` | `LDY [IY]` | `IY <- mem[addr]` |
-| `01011` | `HLT`      | `Halt CPU`        |
+| `01011` | `XXX`      | `Halt CPU`        |
 | `01100` | `ST [IY]`  | `mem[IY] <- A`    |
 | `01101` | `STX [IY]` | `mem[IY] <- IX`   |
 | `01110` | `STY [IY]` | `mem[IY] <- IY`   |
-| `01111` | `HLT`      | `Halt CPU`        |
+| `01111` | `XXX`      | `Halt CPU`        |
 | `10000` | `NOP`      | `Sem operação`    |
-| `10001` | `TXA`      | `A <- IX`         |
-| `10010` | `TYA`      | `A <- IY`         |
-| `10011` | `HLT`      | `Halt CPU`        |
-| `10100` | `TAX`      | `IX <- A`         |
+| `10001` | `TAX`      | `IX <- A`         |
+| `10010` | `TAY`      | `IY <- A`         |
+| `10011` | `XXX`      | `Halt CPU`        |
+| `10100` | `TXA`      | `A <- IX`         |
 | `10101` | `NOP`      | `Sem operação`    |
-| `10110` | `TYX`      | `IX <- IY`        |
-| `10111` | `HLT`      | `Halt CPU`        |
-| `11000` | `TAY`      | `IY <- A`         |
-| `11001` | `TXY`      | `IY <- IX`        |
+| `10110` | `TXY`      | `IY <- IX`        |
+| `10111` | `XXX`      | `Halt CPU`        |
+| `11000` | `TYA`      | `A <- IY`         |
+| `11001` | `TYX`      | `IX <- IY`        |
 | `11010` | `NOP`      | `Sem operação`    |
-| `11011` | `HLT`      | `Halt CPU`        |
-| `111xx` | `HLT`      | `Halt CPU`        |
+| `11011` | `XXX`      | `Halt CPU`        |
+| `111xx` | `XXX`      | `Halt CPU`        |
 
 Grupo `010`: Arithmetic
 
@@ -187,6 +190,8 @@ Grupo `010`: Arithmetic
 | `00100` | `OR  IX`   | `A <- A \| IX`                 |
 | `00101` | `XOR IX`   | `A <- A ^ IX`                  |
 | `00110` | `CMP IX`   | `A - IX, sem writeback`        |
+| `00111` | `XXX`      | `Halt CPU`                     |
+| `01xxx` | `XXX`      | `Halt CPU`                     |
 | `10000` | `ADC imm8` | `A <- A + imm8 + C`            |
 | `10001` | `SBC imm8` | `A <- A - imm8 - (1 - C)`      |
 | `10010` | `MUL imm8` | `A <- A[3:0] * imm8[3:0]`      |
@@ -194,6 +199,7 @@ Grupo `010`: Arithmetic
 | `10100` | `OR  imm8` | `A <- A \| imm8`               |
 | `10101` | `XOR imm8` | `A <- A ^ imm8`                |
 | `10110` | `CMP imm8` | `A - imm8, sem writeback`      |
+| `10111` | `XXX`      | `Halt CPU`                     |
 | `11000` | `ADC addr` | `A <- A + mem[addr] + C`       |
 | `11001` | `SBC addr` | `A <- A - mem[addr] - (1 - C)` |
 | `11010` | `MUL addr` | `A <- A[3:0] * mem[addr][3:0]` |
@@ -201,6 +207,7 @@ Grupo `010`: Arithmetic
 | `11100` | `OR  addr` | `A <- A \| mem[addr]`          |
 | `11101` | `XOR addr` | `A <- A ^ mem[addr]`           |
 | `11110` | `CMP addr` | `A - mem[addr], sem writeback` |
+| `11111` | `XXX`      | `Halt CPU`                     |
 
 Grupo `011`: Unary
 
@@ -231,9 +238,12 @@ Grupo `100`: Jump
 | `00110` | `BCS rel8` | `if C=1: PC = PC + 2 + rel8` |
 | `00111` | `BVS rel8` | `if V=1: PC = PC + 2 + rel8` |
 | `01000` | `JMP addr` | `PC = addr`                  |
+| `01xxx` | `XXX`      | `Halt CPU`                   |
+| `1xxxx` | `XXX`      | `Halt CPU`                   |
 
 Notas:
 
+- `XXX` significa `indefinido`, logo sempre ocorrerar um `HLT`
 - rel8 sempre é um inteiro com sinal, que vai de `-128` à `127`.
 - imm8 sempre é um inteiro sem sinal, que vai de `0` à `255`.
 
@@ -272,7 +282,9 @@ Notas relevantes sobre cada instrução:
 - `SHL` e `SHR`: Não tem opcodes próprios na ALU, as operações são feitas como
   `ROL` e `ROR`, mas com a flag carry em `0`
 - `NOT`: Pode ser implementado como: `A XOR 0xFF`
-- `CMP`: O resultado da operação pode ser interpretado como:
+- `CMP`: O resultado da operação pode ser interpretado como: `ZC = A <=> B`
+- `STY` e `LDY`: O modo indireto dessas instruções são válidos, mas raramente
+  úteis na prática
 
 Notas sobre as flags:
 
