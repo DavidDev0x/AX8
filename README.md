@@ -52,6 +52,7 @@ pela ALU.
 |   `BMI`   | `. . . .` | Branch if MInus          |
 |   `BNQ`   | `. . . .` | Branch if Not eQual      |
 |   `BPL`   | `. . . .` | Branch if PLus           |
+|   `BRA`   | `. . . .` | BRAnch                   |
 |   `BVC`   | `. . . .` | Branch if oVerflow Clear |
 |   `BVS`   | `. . . .` | Branch if oVerflow Set   |
 |   `CLC`   | `. 0 . .` | CLear Carry              |
@@ -133,6 +134,24 @@ e executado. Qualquer modo não encodificado aqui deve gerar a instrução: `HAL
 
 Grupo `000`: System
 
+```
+Encoding:
+  NOP:
+    4 3 2 1 0
+    0 0 0 0 0
+  Flag Manipulation:
+    4 3 2 1 0
+    0 0 1 F B
+    - F = Flag -> 0=C, 1=V
+    - B = Bit -> 0=Clear, 1=Set
+  HALT:
+    4 3 2 1 0
+    0 1 x x x -> HALT
+    1 0 x x x -> HALT
+    1 1 x x x -> HALT
+    1 1 1 1 1 -> Official HALT
+```
+
 |  Mode   | Mnemônico | Operação        |
 | :-----: | --------- | --------------- |
 | `00000` | `NOP`     | `Consome ciclo` |
@@ -146,6 +165,21 @@ Grupo `000`: System
 | `11111` | `HLT`     | `Halt CPU`      |
 
 Grupo `001`: Memory
+
+```
+Enconding:
+  Memory:
+    4 3 2 1 0
+    0 M D R R
+    - M  = Mode      -> 0=Absolute, 1=Indirect
+    - D  = Direction -> 0=Read, 1=Write
+    - RR = Register  -> 00=A, 01=IX, 10=IY, 11=HALT
+  Transfer:
+    4 3 2 1 0
+    1 S S D D
+    - SS = Source      -> 00=A, 01=IX, 10=IY, 11=HALT
+    - DD = Destination -> 00=A, 01=IX, 10=IY, 11=HALT
+```
 
 |  Mode   | Mnemônico  | Operação          |
 | :-----: | ---------- | ----------------- |
@@ -181,6 +215,15 @@ Grupo `001`: Memory
 
 Grupo `010`: Arithmetic
 
+```
+Encoding:
+  4 3 2 1 0
+  S S O O O
+  - SS  = Source    -> 00=IX, 01=HALT, 10=Immediate, 11=Absolute
+  - OOO = Operation -> 000=ADC, 001=SBC, 010=MUL, 011=AND,
+                       100=OR, 101=XOR, 110=CMP, 111=HALT
+```
+
 |  Mode   | Mnemônico  | Operação                       |
 | :-----: | ---------- | ------------------------------ |
 | `00000` | `ADC IX`   | `A <- A + IX + C`              |
@@ -211,6 +254,23 @@ Grupo `010`: Arithmetic
 
 Grupo `011`: Unary
 
+```
+Enconding:
+  Shift/Bit:
+    4 3 2 1 0
+    0 0 O O O
+    - OOO = Operation -> 000=SHL, 001=SHR, 010|011|100=HALT,
+                         101=NOT, 110=ROL, 111=ROR
+  Increment/Decrement:
+    4 3 2 1 0
+    0 1 D R R
+    - D  = Decrement -> 0=INC, 1=DEC
+    - RR = Register  -> 00=A, 01=IX, 10=IY, 11=HALT
+  HALT:
+    4 3 2 1 0
+    1 x x x x -> HALT
+```
+
 |  Mode   | Mnemônico | Operação                        |
 | :-----: | --------- | ------------------------------- |
 | `00000` | `SHL`     | `A <- A << 1; C <- [7..0] <- 0` |
@@ -233,6 +293,23 @@ Grupo `011`: Unary
 
 Grupo `100`: Jump
 
+```
+Encoding
+  Conditional Branch:
+    4 3 2 1 0
+    0 0 T F F
+    - T  = Test -> 0=Test if Clear, 1=Test if Set
+    - FF = Flag -> 00=Z, 01=C, 10=N, 11=V
+  Unconditional Control Flow:
+    4 3 2 1 0
+    1 0 0 O O
+    - OO = Operation -> 00=BRA, 01=JMP, 10|11=Reserved/NO-OP
+  HALT:
+    4 3 2 1 0
+    0 1 x x x -> HALT
+    1 1 x x x -> HALT
+```
+
 |  Mode   | Mnemônico  | Operação                     |
 | :-----: | ---------- | ---------------------------- |
 | `00000` | `BNQ rel8` | `if Z=0: PC = PC + 2 + rel8` |
@@ -243,9 +320,13 @@ Grupo `100`: Jump
 | `00101` | `BMI rel8` | `if N=1: PC = PC + 2 + rel8` |
 | `00110` | `BCS rel8` | `if C=1: PC = PC + 2 + rel8` |
 | `00111` | `BVS rel8` | `if V=1: PC = PC + 2 + rel8` |
-| `01000` | `JMP addr` | `PC = addr`                  |
 | `01xxx` | `XXX`      | `Halt CPU`                   |
-| `1xxxx` | `XXX`      | `Halt CPU`                   |
+| `10000` | `BRA rel8` | `PC = PC + 2 + rel8`         |
+| `10001` | `JMP addr` | `PC = addr`                  |
+| `10010` | `NOP`      | `Reservado: Sem operação`    |
+| `10011` | `NOP`      | `Reservado: Sem operação`    |
+| `101xx` | `XXX`      | `Halt CPU`                   |
+| `11xxx` | `XXX`      | `Halt CPU`                   |
 
 Notas:
 
