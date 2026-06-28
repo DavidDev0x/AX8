@@ -3,10 +3,10 @@ HLT: 0=Nothing | 1=Halt CPU
 ALU_WB: 0=Nothing | 1=Write
 
 PC_OP[1:0]:
-  00 = Next
+  00 = Hold
   01 = Relative Branch
   10 = Absolute Jump
-  11 = Next
+  11 = Advance
 
 OP_SIZE[1:0]:
   00 = None

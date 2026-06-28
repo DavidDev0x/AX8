@@ -101,7 +101,7 @@ Instrução:
 Modos:
   Implied: (1-byte) | MNEMONIC
     byte 0: instrução
-  Zeropage: (1-byte) | MNEMONIC [IY]
+  Indirect: (1-byte) | MNEMONIC [IY]
     byte 0: instrução
   Immediate: (2-bytes) | MNEMONIC #imm8
     byte 0: instrução

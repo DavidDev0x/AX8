@@ -1,0 +1,90 @@
+inputs:
+  clk
+  reset
+  enable
+  addr_mode[2:0]:
+    000 = Implied
+    001 = Indirect
+    010 = Immediate
+    011 = Relative
+    100 = Absolute
+  rw:
+    0 = Write
+    1 = Read
+  pc_op[1:0]:
+    00 = Hold
+    01 = Branch
+    10 = Jump
+    11 = Advance
+
+outputs:
+  mem_re
+  mem_we
+  data_latch_we
+  ir_we
+  operand_lo_we
+  operand_hi_we
+  addr_sel[1:0]:
+    00 = PC
+    01 = EA
+    10 = IY
+    11 = Reserved
+  pc_op_out[1:0]:
+    00 = Hold
+    01 = Branch
+    10 = Jump
+    11 = Advance
+
+State | addr_sel | mem_re | mem_we | ir_we | op_lo_we | op_hi_we | data_latch_we | pc_op   | commit
+F0a   | PC       | 1      | 0      | 0     | 0        | 0        | 1             | Hold    | 0
+F0b   | PC       | 0      | 0      | 1     | 0        | 0        | 0             | Advance | 0
+F1a   | PC       | 1      | 0      | 0     | 0        | 0        | 1             | Hold    | 0
+F1b   | PC       | 0      | 0      | 0     | 1        | 0        | 0             | Advance | 0
+F2a   | PC       | 1      | 0      | 0     | 0        | 0        | 1             | Hold    | 0
+F2b   | PC       | 0      | 0      | 0     | 0        | 1        | 0             | Advance | 0
+F3a R | EA/IY    | 1      | 0      | 0     | 0        | 0        | 1             | Hold    | 0
+F3a W | EA/IY    | 0      | 1      | 0     | 0        | 0        | 0             | Hold    | 0
+F3b   | EA/IY    | 0      | 0      | 0     | 0        | 0        | 0             | Hold    | 0
+EX    | PC       | 0      | 0      | 0     | 0        | 0        | 0             | PC_OP   | 1
+
+
+Internal Encoding:
+  4 3 2 1 0
+  S S S S P
+  SSSS -> Each bit represents a State
+  P    -> 0=Phase A, 1=Phase B
+
+  00000 - F0a
+  00001 - F0b
+  00010 - F1a
+  00011 - F1b
+  00100 - F2a
+  00101 - F2b
+  01000 - F3a
+  01001 - F3b
+  10000 - EX
+
+
+Instruction Flow:
+Implied:
+  F0a -> F0b -> EX
+
+Indirect [WRITE]:
+  F0a -> F0b -> F3a -> EX
+
+Indirect [READ]:
+  F0a -> F0b -> F3a -> F3b -> EX
+
+Immediate [WRITE]:
+Relative [WRITE]:
+  F0a -> F0b -> F1a -> F1b -> F3a -> EX
+
+Immediate [READ]:
+Relative [READ]:
+  F0a -> F0b -> F1a -> F1b -> F3a -> F3b -> EX
+
+Absolute [WRITE]:
+  F0a -> F0b -> F1a -> F1b -> F2a -> F2b -> F3a -> EX
+
+Absolute [READ]:
+  F0a -> F0b -> F1a -> F1b -> F2a -> F2b -> F3a -> F3b -> EX
