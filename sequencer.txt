@@ -13,10 +13,11 @@ inputs:
   mode[1:0]:
     00 = Implied
     01 = Indirect
-    10 = Immediate/Relative
+    10 = Immediate/Relative ; Both do the same byte operation
     11 = Absolute
 
 outputs:
+  commit
   mem_re
   mem_we
   data_latch_we -> dl_we
@@ -34,17 +35,17 @@ outputs:
     10 = Jump
     11 = Advance
 
-State | addr_sel | mem_re | mem_we | ir_we | op_lo_we | op_hi_we | data_latch_we | pc_op   | commit
-F0a   | PC       | 1      | 0      | 0     | 0        | 0        | 1             | Hold    | 0
-F0b   | PC       | 0      | 0      | 1     | 0        | 0        | 0             | Advance | 0
-F1a   | PC       | 1      | 0      | 0     | 0        | 0        | 1             | Hold    | 0
-F1b   | PC       | 0      | 0      | 0     | 1        | 0        | 0             | Advance | 0
-F2a   | PC       | 1      | 0      | 0     | 0        | 0        | 1             | Hold    | 0
-F2b   | PC       | 0      | 0      | 0     | 0        | 1        | 0             | Advance | 0
-F3a R | EA/IY    | 1      | 0      | 0     | 0        | 0        | 1             | Hold    | 0
-F3a W | EA/IY    | 0      | 1      | 0     | 0        | 0        | 0             | Hold    | 0
-F3b   | EA/IY    | 0      | 0      | 0     | 0        | 0        | 0             | Hold    | 0
-EX    | PC       | 0      | 0      | 0     | 0        | 0        | 0             | PC_OP   | 1
+State | commit | mem_re | mem_we | dl_we | ir_we | op_lo_we | op_hi_we | addr_sel | pc_op
+F0a   | 0      | 1      | 0      | 1     | 0     | 0        | 0        | PC       | Hold
+F0b   | 0      | 0      | 0      | 0     | 1     | 0        | 0        | PC       | Advance
+F1a   | 0      | 1      | 0      | 1     | 0     | 0        | 0        | PC       | Hold
+F1b   | 0      | 0      | 0      | 0     | 0     | 1        | 0        | PC       | Advance
+F2a   | 0      | 1      | 0      | 1     | 0     | 0        | 0        | PC       | Hold
+F2b   | 0      | 0      | 0      | 0     | 0     | 0        | 1        | PC       | Advance
+F3a W | 0      | 0      | 1      | 0     | 0     | 0        | 0        | EA/IY    | Hold
+F3a R | 0      | 1      | 0      | 1     | 0     | 0        | 0        | EA/IY    | Hold
+F3b   | 0      | 0      | 0      | 0     | 0     | 0        | 0        | EA/IY    | Hold
+EX    | 1      | 0      | 0      | 0     | 0     | 0        | 0        | PC       | PC_OP
 
 Internal Encoding:
   4 3 2 1 0
@@ -58,7 +59,7 @@ F0b: IF MODE=Implied THEN next=EX
      IF MODE=Indirect THEN next=F3a
      IF MODE=Imm/Rel or MODE=Absolute THEN next=F1a
 F1a: next=F1b
-F1b: IF MODE=Imm/Rel THEN next=F3a
+F1b: IF MODE=Imm/Rel THEN next=EX
      IF MODE=Absolute THEN next=F2a
 F2a: next=F2b
 F2b: next=F3a
@@ -67,17 +68,39 @@ F3a: IF RW=0 THEN next=EX
 F3b: next=EX
 EX:  next=F0a
 
+Expressions:
 IMP = M1' * M0'
 IND = M1' * M0
 IMM = M1  * M0'
 ABS = M1  * M0
+
 F0 = EX' * F3' * F2' * F1'
 
+F0a = F0 * PH'
+F0b = F0 * PH
+F1a = F1 * PH'
+F1b = F1 * PH
+F2a = F2 * PH'
+F2b = F2 * PH
+F3a = F3 * PH'
+F3b = F3 * PH
+
 PHN = PH' * EX' * (F3 * RW')'
-F1N = (F1 * PH') + (F0 * PH * M1)
-F2N = (F2 * PH') + (F1 * PH * ABS)
-F3N = (F3 * PH' * RW) + (F2 * PH) + (F1 * PH * IMM) + (F0 * PH * IND)
-EXN = (F3 * PH) + (F3 * PH' * RW') + (F0 * PH * IMP)
+F1N = F1a + (F0b * M1)
+F2N = F2a + (F1b * ABS)
+F3N = (F3a * RW) + F2b + (F0b * IND)
+EXN = (F3a * RW') + F3b + (F1b * IMM) + (F0b * IMP)
+
+commit = EX
+mem_re = F0a + F1a + F2a + (F3a * RW)
+mem_we = F3a * RW'
+dl_we = mem_re
+ir_we = F0b
+op_lo_we = F1b
+op_hi_we = F2b
+addr_sel0 = F3 * ABS
+addr_sel1 = F3 * IND
+pc_op0 = EX ? pc_op : ((F0b + F1b + F2b) ? Advance : Hold)
 
 Instruction Flow:
 Implied:
@@ -89,13 +112,14 @@ Indirect [WRITE]:
 Indirect [READ]:
   F0a -> F0b -> F3a -> F3b -> EX
 
+; NOTE: Immediate/Relative write doesn't exist, but this sequence is valid
 Immediate [WRITE]:
 Relative [WRITE]:
-  F0a -> F0b -> F1a -> F1b -> F3a -> EX
+  F0a -> F0b -> F1a -> F1b -> EX
 
 Immediate [READ]:
 Relative [READ]:
-  F0a -> F0b -> F1a -> F1b -> F3a -> F3b -> EX
+  F0a -> F0b -> F1a -> F1b -> EX
 
 Absolute [WRITE]:
   F0a -> F0b -> F1a -> F1b -> F2a -> F2b -> F3a -> EX
