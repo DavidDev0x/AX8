@@ -13,3 +13,4 @@
 ./src/shifter_8.v
 ./src/multiplier_4.v
 ./src/alu.v
+src/decode_memory.v
