@@ -1,25 +1,25 @@
 HLT: 0=Nothing | 1=Halt CPU
 
-ALU_WB: 0=Nothing | 1=Write
+ALU_WB:
+  0 = Nothing
+  1 = Write
 
-PC_OP[1:0]:
-  00 = Hold
-  01 = Relative Branch
-  10 = Absolute Jump
-  11 = Advance
+MEM_RW:
+  0 = Memory Write
+  1 = Memory Read
 
-OP_SIZE[1:0]:
-  00 = None
-  01 = Byte
-  10 = Word
-  11 = None
+MODE[1:0]:
+  00 = Implied
+  01 = Indirect
+  10 = Immediate/Relative
+  11 = Absolute
 
 DST_SEL[2:0] - Write:
   000 = A
   001 = IX
   010 = IY
-  011 = Absolute
-  100 = Indirect [IY]
+  011 = HLT    ; old: Absolute
+  100 = Memory ; old: Indirect [IY]
   101 = HLT
   110 = HLT
   111 = HLT
@@ -28,9 +28,9 @@ SRC_SEL[2:0] - Read:
   000 = A
   001 = IX
   010 = IY
-  011 = Absolute
-  100 = Indirect [IY]
-  101 = Immediate
+  011 = HLT       ; old: Absolute
+  100 = Operand   ; old: Indirect [IY]
+  101 = DataLatch ; old: Immediate
   110 = 0x00
   111 = 0xFF
 
@@ -66,7 +66,8 @@ System:
 Memory:
   HLT
   ALU_WB = ~HLT
-  OP_SIZE = None | Word
+  MEM_RW
+  MODE = Implied | Absolute | Indirect
   DST_SEL = A | IX | IY | Absolute | Indirect
   SRC_SEL = A | IX | IY | Absolute | Indirect
   ALU_OP = 1000
@@ -74,7 +75,8 @@ Memory:
 Arithmetic:
   HLT
   ALU_WB = ~HLT | ~I_CMP
-  OP_SIZE
+  MEM_RW
+  MODE = Implied | Immediate | Absolute
   DST_SEL = A
   SRC_SEL = IX | Immediate | Absolute
   ALU_OP = 0xxx
@@ -82,6 +84,8 @@ Arithmetic:
 Unary:
   HLT
   ALU_WB = ~HLT
+  MEM_RW
+  MODE = Implied
   DST_SEL = A | IX | IY
   SRC_SEL = 0x00 | 0xFF
   FR_DATA = [ FR.Z, FR.N, FR.C | 1 | 0, FR.V ]
@@ -91,4 +95,7 @@ Unary:
 Jump:
   HLT
   PC_OP = Relative Branch | Absolute Jump
-  OP_SIZE = Byte | Word
+
+
+NOTE: Since DST_SEL and SRC_SEL should be changed, but rewiring takes time,
+so, for now, an adapter exists within implementation

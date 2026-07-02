@@ -2,9 +2,9 @@ inputs:
   clk
   reset
   enable
-  rw:
-    0 = Write
-    1 = Read
+  rw: ; Only matters for Indirect or Absolute
+    0 = Memory Write
+    1 = Memory Read
   pc_op_in[1:0]:
     00 = Hold
     01 = Branch
