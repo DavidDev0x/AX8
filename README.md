@@ -2,15 +2,15 @@
 
 ## Overview
 
-&nbsp;&nbsp;&nbsp;&nbsp; O AX8 ou Axle é uma CPU CISC little-endian de 8-bits com um bus de 12-bits
+&nbsp;&nbsp;&nbsp;&nbsp; O AX8 ou Axle é uma CPU CISC little-endian de 8-bits com um bus de 16-bits
 endereçável. Instruções são 8-bits com decodificação ortogonal: Os bits 7:5
 ditam a unidade funcional, enquanto bits 4:0 mais baixos configuram a operação.
 Algumas instruções são seguidas por um endereço de 12-bits ou um valor de
 8-bits, fazendo-os serem 3-bytes ou 2-bytes no total.
 
-&nbsp;&nbsp;&nbsp;&nbsp; Todos os programas se iniciam pelo endereço contido em `0x0000`,
+&nbsp;&nbsp;&nbsp;&nbsp; Todos os programas se iniciam pelo endereço contido em `0xfff1:0xfff0`,
 ao reset/powerup da CPU, dois bytes são lidos nesse endereço e registrados no
-Program Counter. Por conveniência, o endereço `0x0002` pode ser utilizado
+Program Counter. Por conveniência, o endereço `0x0100` pode ser utilizado
 como Stack Pointer.
 
 ### Registradores
