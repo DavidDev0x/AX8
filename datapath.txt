@@ -1,16 +1,14 @@
 ; external bus
-data_bus <-> data_latch (bidirectional)
+data_bus <-> [dl_we]    <-> data_latch (bidirectional)
+data_bus  -> [ir_we]     -> ir
+data_bus  -> [op_lo_we]  -> op_lo
+data_bus  -> [op_hi_we]  -> op_hi
 
 ; address bus (16-bit)
 addr_bus <- mux addr_sel
 [ 00 => pc
   01 => op_hi:op_lo
   10 => 4'b0:iy ]
-
-; instruction and operand capture
-data_latch -> [ir_we]    -> ir
-data_latch -> [op_lo_we] -> op_lo
-data_latch -> [op_hi_we] -> op_hi
 
 ; ALU B input
 alu_b <- mux src_sel

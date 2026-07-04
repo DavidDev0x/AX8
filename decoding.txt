@@ -1,12 +1,18 @@
 HLT: 0=Nothing | 1=Halt CPU
 
+MEM_RW:
+  0 = Memory Write
+  1 = Memory Read
+
 ALU_WB:
   0 = Nothing
   1 = Write
 
-MEM_RW:
-  0 = Memory Write
-  1 = Memory Read
+PC_OP[1:0]:
+  00 = Hold    ; Ignored if MODE!=Absolute | Relative
+  01 = Branch
+  10 = Jump
+  11 = Advance ; Ignored if MODE!=Absolute | Relative
 
 MODE[1:0]:
   00 = Implied
@@ -14,23 +20,19 @@ MODE[1:0]:
   10 = Immediate/Relative
   11 = Absolute
 
-DST_SEL[2:0] - Write:
-  000 = A
-  001 = IX
-  010 = IY
-  011 = HLT    ; old: Absolute
-  100 = Memory ; old: Indirect [IY]
-  101 = HLT
-  110 = HLT
-  111 = HLT
+DST_SEL[1:0] - Write:
+  00 = A
+  01 = IX
+  10 = IY
+  11 = Memory
 
 SRC_SEL[2:0] - Read:
   000 = A
   001 = IX
   010 = IY
-  011 = HLT       ; old: Absolute
-  100 = Operand   ; old: Indirect [IY]
-  101 = DataLatch ; old: Immediate
+  011 = Memory
+  100 = 0x00
+  101 = 0xFF
   110 = 0x00
   111 = 0xFF
 
@@ -67,9 +69,9 @@ Memory:
   HLT
   ALU_WB = ~HLT
   MEM_RW
-  MODE = Implied | Absolute | Indirect
-  DST_SEL = A | IX | IY | Absolute | Indirect
-  SRC_SEL = A | IX | IY | Absolute | Indirect
+  MODE = Implied | Indirect | Absolute
+  DST_SEL = A | IX | IY | DataLatch
+  SRC_SEL = A | IX | IY | DataLatch
   ALU_OP = 1000
 
 Arithmetic:
@@ -78,8 +80,8 @@ Arithmetic:
   MEM_RW
   MODE = Implied | Immediate | Absolute
   DST_SEL = A
-  SRC_SEL = IX | Immediate | Absolute
-  ALU_OP = 0xxx
+  SRC_SEL = IX | DataLatch
+  ALU_OP = Any
 
 Unary:
   HLT
@@ -94,6 +96,7 @@ Unary:
 
 Jump:
   HLT
+  MODE = Immediate | Absolute
   PC_OP = Relative Branch | Absolute Jump
 
 
