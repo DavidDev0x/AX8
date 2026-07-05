@@ -1,84 +1,97 @@
+/* vim: set filetype=verilog : */
 `timescale 1ns / 1ps
 
 module decode_memory (
-    input  wire       g_mem,
-    input  wire [3:0] fr,
-    input  wire [7:0] ir,
-
-    output wire       hlt,
-    output wire       alu_wb,
-    output wire [1:0] op_size,
-    output wire [2:0] dst_sel,
-    output wire [2:0] src_sel,
-    output wire [3:0] alu_op
+    input        E,
+    input  [3:0] FR,
+    input  [7:0] IR,
+    output       HLT,
+    output       MEM_RW,
+    output       ALU_WB,
+    output [1:0] MODE,
+    output [1:0] DST_SEL,
+    output [2:0] SRC_SEL,
+    output [3:0] ALU_OP
 );
-
-    wire ir0;
-    wire ir1;
-    wire ir2;
-    wire ir3;
-    wire ir4;
-
-    wire is_reg;
-    wire mem_we;
+    wire n_ir4;
+    wire is_trx;
     wire is_ind;
+    wire mem_rw_internal;
 
-    wire [1:0] dst_reg;
-    wire [1:0] src_reg;
-    wire [2:0] mem_addr_sel;
-
+    wire hlt_a;
+    wire hlt_b;
     wire hlt_internal;
     wire alu_wb_internal;
-    wire op_size_internal;
 
-    wire [2:0] dst_sel_internal;
+    wire src_reg0;
+    wire src_reg1;
+    wire n_is_trx;
+    wire n_is_ind;
+    wire n_mem_rw;
+    wire src_mux_sel;
+
+    wire [1:0] mode_internal;
+    wire [1:0] dst_sel_internal;
     wire [2:0] src_sel_internal;
+    wire [3:0] alu_op_internal;
 
-    wire src_sel_control;
+    not n0 (n_ir4, IR[4]);
+    buf b0 (is_trx, IR[4]);
 
-    // FR aparece no circuito, mas nesta parte não é usado diretamente.
-    wire unused_fr;
-    assign unused_fr = |fr;
+    nand n1 (mem_rw_internal, IR[2], n_ir4);
+    and  a0 (is_ind, IR[3], n_ir4);
 
-    assign ir0 = ir[0];
-    assign ir1 = ir[1];
-    assign ir2 = ir[2];
-    assign ir3 = ir[3];
-    assign ir4 = ir[4];
+    // HLT detection
+    and a1 (hlt_a, IR[0], IR[1]);
+    and a2 (hlt_b, IR[2], IR[3], IR[4]);
+    or  o0 (hlt_internal, hlt_a, hlt_b);
 
-    assign is_reg = ir4;
+    not n2 (alu_wb_internal, hlt_internal);
 
-    assign mem_we = ir2 & ~is_reg;
-    assign is_ind = ir3 & ~is_reg;
+    // Source register selection
+    assign src_reg0 = is_trx ? IR[2] : IR[0];
+    assign src_reg1 = is_trx ? IR[3] : IR[1];
 
-    assign dst_reg = {ir1, ir0};
+    not n3 (n_is_trx, is_trx);
+    not n4 (n_is_ind, is_ind);
 
-    assign src_reg = is_reg ? {ir3, ir2} : {ir1, ir0};
+    buf b1 (mode_internal[0], n_is_trx);
+    and a3 (mode_internal[1], n_is_trx, n_is_ind);
 
-    assign mem_addr_sel = {is_ind, ~is_ind, ~is_ind};
+    assign dst_sel_internal[0] =
+        mem_rw_internal ? IR[0] : 1'b1;
 
-    assign hlt_internal = (ir0 & ir1) | (ir2 & ir3 & ir4);
+    assign dst_sel_internal[1] =
+        mem_rw_internal ? IR[1] : 1'b1;
 
-    assign alu_wb_internal = ~hlt_internal;
+    not n5 (n_mem_rw, mem_rw_internal);
+    or  o1 (src_mux_sel, is_trx, n_mem_rw);
 
-    assign op_size_internal = ~(is_ind | is_reg);
+    assign src_sel_internal[0] =
+        src_mux_sel ? src_reg0 : 1'b1;
 
-    assign dst_sel_internal = mem_we ? mem_addr_sel : {1'b0, dst_reg};
+    assign src_sel_internal[1] =
+        src_mux_sel ? src_reg1 : 1'b1;
 
-    assign src_sel_control = is_reg | mem_we;
+    assign src_sel_internal[2] = 1'b0;
 
-    assign src_sel_internal = src_sel_control ? {1'b0, src_reg} : mem_addr_sel;
+    assign alu_op_internal = 4'b1000;
 
-    assign hlt = g_mem & hlt_internal;
+    // Group enable
+    and g0 (HLT, E, hlt_internal);
+    and g1 (MEM_RW, E, mem_rw_internal);
+    and g2 (ALU_WB, E, alu_wb_internal);
 
-    assign alu_wb = g_mem & alu_wb_internal;
+    assign MODE =
+        mode_internal & {2{E}};
 
-    assign op_size = g_mem ? {op_size_internal, 1'b0} : 2'b00;
+    assign DST_SEL =
+        dst_sel_internal & {2{E}};
 
-    assign dst_sel = g_mem ? dst_sel_internal : 3'b000;
+    assign SRC_SEL =
+        src_sel_internal & {3{E}};
 
-    assign src_sel = g_mem ? src_sel_internal : 3'b000;
-
-    assign alu_op = g_mem ? 4'b1000 : 4'b0000;
+    assign ALU_OP =
+        alu_op_internal & {4{E}};
 
 endmodule
