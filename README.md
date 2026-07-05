@@ -2,15 +2,15 @@
 
 ## Overview
 
-&nbsp;&nbsp;&nbsp;&nbsp; O AX8 ou Axle é uma CPU CISC little-endian de 8-bits com um bus de 12-bits
+&nbsp;&nbsp;&nbsp;&nbsp; O AX8 ou Axle é uma CPU CISC little-endian de 8-bits com um bus de 16-bits
 endereçável. Instruções são 8-bits com decodificação ortogonal: Os bits 7:5
 ditam a unidade funcional, enquanto bits 4:0 mais baixos configuram a operação.
 Algumas instruções são seguidas por um endereço de 12-bits ou um valor de
 8-bits, fazendo-os serem 3-bytes ou 2-bytes no total.
 
-&nbsp;&nbsp;&nbsp;&nbsp; Todos os programas se iniciam pelo endereço contido em `0x0000`,
+&nbsp;&nbsp;&nbsp;&nbsp; Todos os programas se iniciam pelo endereço contido em `0xfff1:0xfff0`,
 ao reset/powerup da CPU, dois bytes são lidos nesse endereço e registrados no
-Program Counter. Por conveniência, o endereço `0x0002` pode ser utilizado
+Program Counter. Por conveniência, o endereço `0x0100` pode ser utilizado
 como Stack Pointer.
 
 ### Registradores
@@ -63,6 +63,7 @@ pela ALU.
 |   `INC`   | `. . * *` | INCrement                |
 |   `JMP`   | `. . . .` | JuMP                     |
 |   `LD `   | `. . * *` | LoaD                     |
+|   `LDI`   | `. . * *` | LoaD Immediate           |
 |   `LDX`   | `. . * *` | LoaD iX                  |
 |   `LDY`   | `. . * *` | LoaD iY                  |
 |   `MUL`   | `* 0 * *` | MULtiply                 |
@@ -191,9 +192,9 @@ Enconding:
 | `00101` | `STX addr` | `mem[addr] <- IX` |
 | `00110` | `STY addr` | `mem[addr] <- IY` |
 | `00111` | `XXX`      | `Halt CPU`        |
-| `01000` | `LD [IY]`  | `A <- mem[addr]`  |
-| `01001` | `LDX [IY]` | `IX <- mem[addr]` |
-| `01010` | `LDY [IY]` | `IY <- mem[addr]` |
+| `01000` | `LD [IY]`  | `A <- mem[IY]`    |
+| `01001` | `LDX [IY]` | `IX <- mem[IY]`   |
+| `01010` | `LDY [IY]` | `IY <- mem[IY]`   |
 | `01011` | `XXX`      | `Halt CPU`        |
 | `01100` | `ST [IY]`  | `mem[IY] <- A`    |
 | `01101` | `STX [IY]` | `mem[IY] <- IX`   |
@@ -218,10 +219,14 @@ Grupo `010`: Arithmetic
 ```
 Encoding:
   4 3 2 1 0
-  S S O O O
-  - SS  = Source    -> 00=IX, 01=HALT, 10=Absolute, 11=Immediate
+  M M O O O
+  - MM  = Mode      -> 00=Implied, 01=Indirect, 10=Immediate, 11=Absolute
   - OOO = Operation -> 000=ADC, 001=SBC, 010=MUL, 011=AND,
-                       100=OR, 101=XOR, 110=CMP, 111=HALT
+                       100=OR, 101=XOR, 110=CMP, 111=HLT|LDI
+  LoaD Immediate:
+  4 3 2 1 0
+  1 0 1 1 1
+  - Load A with Immediate value
 ```
 
 |  Mode   | Mnemônico  | Operação                       |
@@ -234,22 +239,29 @@ Encoding:
 | `00101` | `XOR IX`   | `A <- A ^ IX`                  |
 | `00110` | `CMP IX`   | `A - IX, sem writeback`        |
 | `00111` | `XXX`      | `Halt CPU`                     |
-| `01xxx` | `XXX`      | `Halt CPU`                     |
-| `10000` | `ADC addr` | `A <- A + mem[addr] + C`       |
-| `10001` | `SBC addr` | `A <- A - mem[addr] - (1 - C)` |
-| `10010` | `MUL addr` | `A <- A[3:0] * mem[addr][3:0]` |
-| `10011` | `AND addr` | `A <- A & mem[addr]`           |
-| `10100` | `OR  addr` | `A <- A \| mem[addr]`          |
-| `10101` | `XOR addr` | `A <- A ^ mem[addr]`           |
-| `10110` | `CMP addr` | `A - mem[addr], sem writeback` |
-| `10111` | `XXX`      | `Halt CPU`                     |
-| `11000` | `ADC imm8` | `A <- A + imm8 + C`            |
-| `11001` | `SBC imm8` | `A <- A - imm8 - (1 - C)`      |
-| `11010` | `MUL imm8` | `A <- A[3:0] * imm8[3:0]`      |
-| `11011` | `AND imm8` | `A <- A & imm8`                |
-| `11100` | `OR  imm8` | `A <- A \| imm8`               |
-| `11101` | `XOR imm8` | `A <- A ^ imm8`                |
-| `11110` | `CMP imm8` | `A - imm8, sem writeback`      |
+| `01000` | `ADC [IY]` | `A <- A + mem[IY] + C`         |
+| `01001` | `SBC [IY]` | `A <- A - mem[IY] - (1 - C)`   |
+| `01010` | `MUL [IY]` | `A <- A[3:0] * mem[IY][3:0]`   |
+| `01011` | `AND [IY]` | `A <- A & mem[IY]`             |
+| `01100` | `OR  [IY]` | `A <- A \| mem[IY]`            |
+| `01101` | `XOR [IY]` | `A <- A ^ mem[IY]`             |
+| `01110` | `CMP [IY]` | `A - mem[IY], sem writeback`   |
+| `01111` | `XXX`      | `Halt CPU`                     |
+| `10000` | `ADC imm8` | `A <- A + imm8 + C`            |
+| `10001` | `SBC imm8` | `A <- A - imm8 - (1 - C)`      |
+| `10010` | `MUL imm8` | `A <- A[3:0] * imm8[3:0]`      |
+| `10011` | `AND imm8` | `A <- A & imm8`                |
+| `10100` | `OR  imm8` | `A <- A \| imm8`               |
+| `10101` | `XOR imm8` | `A <- A ^ imm8`                |
+| `10110` | `CMP imm8` | `A - imm8, sem writeback`      |
+| `10111` | `LDI imm8` | `A <- imm8`                    |
+| `11000` | `ADC addr` | `A <- A + mem[addr] + C`       |
+| `11001` | `SBC addr` | `A <- A - mem[addr] - (1 - C)` |
+| `11010` | `MUL addr` | `A <- A[3:0] * mem[addr][3:0]` |
+| `11011` | `AND addr` | `A <- A & mem[addr]`           |
+| `11100` | `OR  addr` | `A <- A \| mem[addr]`          |
+| `11101` | `XOR addr` | `A <- A ^ mem[addr]`           |
+| `11110` | `CMP addr` | `A - mem[addr], sem writeback` |
 | `11111` | `XXX`      | `Halt CPU`                     |
 
 Grupo `011`: Unary
@@ -376,9 +388,8 @@ Notas relevantes sobre cada instrução:
 - `INC` e `DEC`: Ambos são lidos como `ADC` pela ULA, mas a diferença é que
   `INC` sempre terá `B` como `0x00` e `Cin` como `1`, e que `DEC` sempre terá `B`
   como `0xFF` e `Cin` como `0`.
-- `SIZE`: Internatemente, cada instrução é codificada com um tamanho, sendo
-  estes tamanhos a quantidade de bytes que necessárias para fetch:
-  `00=None; 01=Byte; 10=Word; 11=None`
+- `LDI`: Tecnicamente, deveria estar no grupo Memory, mas devido a limitações
+  é necessário que fique me Arithmetic
 
 Notas sobre as flags:
 
