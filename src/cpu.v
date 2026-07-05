@@ -5,13 +5,12 @@ module cpu (
     input         CLK,
     input         RST_N,
     input         RDY,
-    input         IN_HLT,
-    input  [7:0]  IN_DATA_BUS,
 
-    output        OUT_HLT,
+    inout  tri0   HLT,
+    inout  wire [7:0] DATA_BUS,
+
     output        RW,
-    output [15:0] ADDR_BUS,
-    output [7:0]  OUT_DATA_BUS
+    output [15:0] ADDR_BUS
 );
     reg rst_sample = 1'b1;
     reg halted = 1'b0;
@@ -28,6 +27,7 @@ module cpu (
 
     wire clk;
     wire rst_req;
+    wire hlt_request;
 
     wire int_done;
     wire out_rst;
@@ -102,7 +102,7 @@ module cpu (
     wire [7:0] lo_addr_bus;
     wire [7:0] hi_addr_bus;
 
-    wire hlt;
+    wire hlt_internal;
 
     assign clk = CLK & RDY & ~halted;
 
@@ -111,19 +111,24 @@ module cpu (
     always @(posedge CLK)
         rst_sample <= RST_N;
 
-    // Halt control
-    assign hlt = IN_HLT | dec_hlt | alu_hlt;
+    // Bidirectional HLT line
+    assign HLT = halted ? 1'b1 : 1'bz;
+    assign hlt_request = HLT;
+
+    assign hlt_internal =
+        hlt_request |
+        dec_hlt |
+        alu_hlt;
 
     always @(posedge clk or posedge rst_req) begin
         if (rst_req)
             halted <= 1'b0;
         else
-            halted <= halted | IN_HLT | (commit & hlt);
+            halted <= halted |
+                      hlt_request |
+                      (commit & (dec_hlt | alu_hlt));
     end
 
-    assign OUT_HLT = halted;
-
-    // Interrupt timing
     interrupt_sequencer u_interrupt_sequencer (
         .CLK       (clk),
         .RESET     (rst_req),
@@ -163,7 +168,6 @@ module cpu (
         .PC_OP     (seq_pc_op)
     );
 
-    // Instruction decoding
     instruction_decoder u_instruction_decoder (
         .FR      (fr_q),
         .IR      (ir_q),
@@ -179,7 +183,6 @@ module cpu (
         .ALU_OP  (alu_op)
     );
 
-    // Timing muxes
     assign mem_rw =
         int_done ? seq_mem_rw : int_mem_rw;
 
@@ -204,7 +207,6 @@ module cpu (
     assign pre_fr_data =
         int_done ? dec_fr_data : int_fr_data;
 
-    // ALU execution
     assign alu_a =
         (dst_sel == 2'b00) ? a_q :
         (dst_sel == 2'b01) ? ix_q :
@@ -267,7 +269,7 @@ module cpu (
     or o0 (dl_we, seq_dl_we, alu_dl_we);
 
     assign dl_data =
-        alu_write ? alu_y : IN_DATA_BUS;
+        alu_write ? alu_y : DATA_BUS;
 
     assign fr_we =
         alu_write ? alu_fr_we : pre_fr_we;
@@ -275,7 +277,6 @@ module cpu (
     assign fr_data =
         alu_write ? alu_fr_data : pre_fr_data;
 
-    // Registers
     always @(posedge clk or posedge rst_req) begin
         if (rst_req) begin
             dl_q    <= 8'h00;
@@ -287,13 +288,13 @@ module cpu (
                 dl_q <= dl_data;
 
             if (ir_we)
-                ir_q <= IN_DATA_BUS;
+                ir_q <= DATA_BUS;
 
             if (op_lo_we)
-                op_lo_q <= IN_DATA_BUS;
+                op_lo_q <= DATA_BUS;
 
             if (op_hi_we)
-                op_hi_q <= IN_DATA_BUS;
+                op_hi_q <= DATA_BUS;
         end
     end
 
@@ -323,7 +324,6 @@ module cpu (
         .fr_q    (fr_q)
     );
 
-    // Address bus
     assign lo_pc = pc_q[7:0];
     assign hi_pc = pc_q[15:8];
 
@@ -351,7 +351,8 @@ module cpu (
 
     assign RW = mem_rw;
 
-    assign OUT_DATA_BUS =
+    // CPU releases DATA_BUS during read
+    assign DATA_BUS =
         mem_rw ? 8'bz : dl_q;
 
 endmodule

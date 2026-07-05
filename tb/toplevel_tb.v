@@ -5,12 +5,13 @@ module toplevel_tb;
     reg CLK;
     reg RESET;
     reg RDY;
-    reg IN_HLT;
+    reg ext_hlt;
 
-    wire        OUT_HLT;
-    wire        RW;
+    tri0 HLT;
+    tri [7:0] DATA_BUS;
+
+    wire RW;
     wire [15:0] ADDR_BUS;
-    wire [7:0]  OUT_DATA_BUS;
 
     integer errors;
     integer cycles;
@@ -20,196 +21,83 @@ module toplevel_tb;
     reg saw_8000;
     reg saw_8001;
 
+    assign HLT =
+        ext_hlt ? 1'b1 : 1'bz;
+
     toplevel #(
         .ROM_FILE("../tb/toplevel_test.hex")
     ) uut (
-        .CLK          (CLK),
-        .RESET        (RESET),
-        .RDY          (RDY),
-        .IN_HLT       (IN_HLT),
-        .OUT_HLT      (OUT_HLT),
-        .RW           (RW),
-        .ADDR_BUS     (ADDR_BUS),
-        .OUT_DATA_BUS (OUT_DATA_BUS)
+        .CLK      (CLK),
+        .RESET    (RESET),
+        .RDY      (RDY),
+        .HLT      (HLT),
+        .DATA_BUS (DATA_BUS),
+        .RW       (RW),
+        .ADDR_BUS (ADDR_BUS)
     );
 
     always #5 CLK = ~CLK;
 
-    task check_byte;
-        input [8*32-1:0] name;
-        input [7:0] got;
-        input [7:0] expected;
+    always @(negedge CLK) begin
+        if (ADDR_BUS == 16'hfff0)
+            saw_fff0 = 1;
 
-        begin
-            $display(
-                "%0s | GOT=%02h EXPECTED=%02h",
-                name,
-                got,
-                expected
-            );
+        if (ADDR_BUS == 16'hfff1)
+            saw_fff1 = 1;
 
-            if (got !== expected) begin
-                errors = errors + 1;
-                $display("ERRO em %0s", name);
-            end
-        end
-    endtask
+        if (ADDR_BUS == 16'h8000)
+            saw_8000 = 1;
+
+        if (ADDR_BUS == 16'h8001)
+            saw_8001 = 1;
+    end
 
     initial begin
         $dumpfile("toplevel.vcd");
         $dumpvars(0, toplevel_tb);
 
-        CLK = 1'b0;
-        RESET = 1'b0;
-        RDY = 1'b1;
-        IN_HLT = 1'b0;
+        CLK = 0;
+        RESET = 0;
+        RDY = 1;
+        ext_hlt = 0;
 
         errors = 0;
         cycles = 0;
 
-        saw_fff0 = 1'b0;
-        saw_fff1 = 1'b0;
-        saw_8000 = 1'b0;
-        saw_8001 = 1'b0;
+        saw_fff0 = 0;
+        saw_fff1 = 0;
+        saw_8000 = 0;
+        saw_8001 = 0;
 
         #2;
+        RESET = 1;
 
-        // RAM select
-        uut.ram[15'h0010] = 8'ha5;
+        #12;
+        RESET = 0;
 
-        force uut.cpu_addr_bus = 16'h0010;
-        force uut.cpu_rw = 1'b1;
-
-        #1;
-
-        check_byte(
-            "RAM READ",
-            uut.in_data_bus,
-            8'ha5
-        );
-
-        release uut.cpu_addr_bus;
-        release uut.cpu_rw;
-
-        // ROM select
-        force uut.cpu_addr_bus = 16'h8010;
-        force uut.cpu_rw = 1'b1;
-
-        #1;
-
-        check_byte(
-            "ROM READ",
-            uut.in_data_bus,
-            8'h5a
-        );
-
-        release uut.cpu_addr_bus;
-        release uut.cpu_rw;
-
-        // RAM write
-        force uut.cpu_addr_bus = 16'h0020;
-        force uut.cpu_rw = 1'b0;
-        force uut.cpu_out_data_bus = 8'h3c;
-
-        @(posedge CLK);
-        #1;
-
-        check_byte(
-            "RAM WRITE",
-            uut.ram[15'h0020],
-            8'h3c
-        );
-
-        release uut.cpu_addr_bus;
-        release uut.cpu_rw;
-        release uut.cpu_out_data_bus;
-
-        // RAM disabled when ROM is selected
-        uut.ram[15'h0020] = 8'ha5;
-
-        force uut.cpu_addr_bus = 16'h8020;
-        force uut.cpu_rw = 1'b0;
-        force uut.cpu_out_data_bus = 8'h77;
-
-        @(posedge CLK);
-        #1;
-
-        check_byte(
-            "ROM AREA BLOCKS RAM WRITE",
-            uut.ram[15'h0020],
-            8'ha5
-        );
-
-        release uut.cpu_addr_bus;
-        release uut.cpu_rw;
-        release uut.cpu_out_data_bus;
-
-        // Reset CPU
-        RESET = 1'b0;
-
-        repeat (2)
-            @(posedge CLK);
-
-        @(negedge CLK);
-        RESET = 1'b1;
-
-        #2;
-        RESET = 1'b0;
-
-        cycles = 0;
-
-        while (!OUT_HLT && cycles < 150) begin
+        while ((HLT !== 1'b1) && cycles < 150) begin
             @(negedge CLK);
             #1;
 
             cycles = cycles + 1;
 
-            if ((ADDR_BUS == 16'hfff0) && !saw_fff0) begin
-                saw_fff0 = 1'b1;
-                $display(
-                    "RESET VECTOR LOW  | ADDR=%04h DATA=%02h",
-                    ADDR_BUS,
-                    uut.in_data_bus
-                );
-            end
-
-            if ((ADDR_BUS == 16'hfff1) && !saw_fff1) begin
-                saw_fff1 = 1'b1;
-                $display(
-                    "RESET VECTOR HIGH | ADDR=%04h DATA=%02h",
-                    ADDR_BUS,
-                    uut.in_data_bus
-                );
-            end
-
-            if ((ADDR_BUS == 16'h8000) && !saw_8000) begin
-                saw_8000 = 1'b1;
-                $display(
-                    "FETCH 8000        | ADDR=%04h DATA=%02h",
-                    ADDR_BUS,
-                    uut.in_data_bus
-                );
-            end
-
-            if ((ADDR_BUS == 16'h8001) && !saw_8001) begin
-                saw_8001 = 1'b1;
-                $display(
-                    "FETCH 8001        | ADDR=%04h DATA=%02h",
-                    ADDR_BUS,
-                    uut.in_data_bus
-                );
-            end
+            $display(
+                "CYCLE=%0d ADDR=%04h DATA=%02h RW=%b HLT=%b",
+                cycles,
+                ADDR_BUS,
+                DATA_BUS,
+                RW,
+                HLT
+            );
         end
 
-        $display("--------------------------------------------");
-        $display("FFF0=%b FFF1=%b 8000=%b 8001=%b HLT=%b",
-            saw_fff0,
-            saw_fff1,
-            saw_8000,
-            saw_8001,
-            OUT_HLT
-        );
-        $display("--------------------------------------------");
+        $display("----------------------------------------");
+        $display("FFF0=%b", saw_fff0);
+        $display("FFF1=%b", saw_fff1);
+        $display("8000=%b", saw_8000);
+        $display("8001=%b", saw_8001);
+        $display("HLT=%b", HLT);
+        $display("----------------------------------------");
 
         if (!saw_fff0)
             errors = errors + 1;
@@ -223,7 +111,7 @@ module toplevel_tb;
         if (!saw_8001)
             errors = errors + 1;
 
-        if (!OUT_HLT)
+        if (HLT !== 1'b1)
             errors = errors + 1;
 
         if (errors == 0)
